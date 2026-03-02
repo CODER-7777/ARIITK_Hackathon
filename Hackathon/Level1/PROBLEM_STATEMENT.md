@@ -6,13 +6,32 @@
 
 ## 1. Context
 
-You are the operator of an autonomous quadcopter drone in a classified industrial facility — **Operation SKYE-X**. The arena is a bounded 2D warehouse space with a tile-grid floor, scattered with rectangular physical obstacles simulating crates, pillars, and wide barriers.
+A rogue adversarial drone — designation **SKYE-X** — has been detected inside a classified industrial facility. Intel suggests it is equipped with onboard evasion algorithms and is actively trying to break line-of-sight, hide behind obstacles, and escape your tracking radius.
 
-Your drone — the **Player** — starts at the top-left corner of the facility `(80, 80)`. Somewhere in the vastness of the map, an **adversarial Target drone** has been deployed at the opposite corner. Your mission: find it, and never let it go.
+You are the operator of an autonomous interceptor quadcopter. You have no direct control — your drone acts on the instructions of the AI controller you write. Your sensors are limited. The map is mostly hidden behind Fog of War. The target knows you are coming.
+
+Your mission is to navigate the facility, locate SKYE-X, and shadow it persistently within a **70-pixel tracking radius** for as long as possible before the mission clock runs out.
+
+**SKYE-X will not make this easy.**
 
 ---
 
-## 2. The Environment
+## 2. The Enemy — SKYE-X
+
+SKYE-X is not a passive target. It has its own onboard AI with three distinct behavioural layers that activate depending on how close you are:
+
+| Behaviour | Trigger | What SKYE-X Does |
+|-----------|---------|-------------------|
+| **Gaussian Random Walk** | Always active | Moves with smooth, unpredictable momentum — never fully still, never fully predictable |
+| **Seek Cover** | You within `80 px` | Identifies the nearest obstacle and steers toward it to break your line-of-sight. **This is its most dangerous capability.** |
+| **Direct Escape** | You within `80 px`, no cover nearby | Flees directly away from you at full speed |
+| **Wall Avoidance** | Near arena edges | Soft repulsion keeps it from cornering itself — it will not trap itself for you |
+
+> The cover-seeking behaviour is what separates good controllers from great ones. SKYE-X actively places rectangular obstacles between itself and you, causing `target_visible` to drop to `False` and forcing you back into blind exploration. If your pursuit logic cannot recover from a lost target, your score will stall.
+
+---
+
+## 3. The Environment
 
 ### Arena
 | Parameter | Value |
@@ -35,7 +54,7 @@ Your drone — the **Player** — starts at the top-left corner of the facility 
 
 ---
 
-## 3. Sensor Suite — What You Can See
+## 4. Sensor Suite — What You Can See
 
 Your only window into the world is the `get_sensor_data()` return dictionary:
 
@@ -59,21 +78,6 @@ sensors = {
 - You can only detect the target if it is within **150 px** of your position
 - `target_visible` becomes `True` the moment the target enters this radius
 - Once discovered (`target_discovered = True`), scoring begins
-
----
-
-## 4. The Adversarial Target
-
-The target drone is not passive. It has its own onboard AI with three behavioural layers:
-
-| Behaviour | Trigger | Description |
-|-----------|---------|-------------|
-| **Gaussian Random Walk** | Always | Base momentum: smoothly random trajectory |
-| **Seek Cover (LoS Breaking)** | Player within `80 px` | Identifies the best obstacle to hide behind and steers toward it |
-| **Direct Escape** | Player within `80 px`, no cover nearby | Flees directly away from the player |
-| **Wall Avoidance** | Near arena edges | Soft repulsion from boundaries |
-
-> The target's **cover-seeking** is its most dangerous behaviour: it actively places obstacles between itself and you, breaking your line-of-sight and causing `target_visible` to drop to `False`.
 
 ---
 

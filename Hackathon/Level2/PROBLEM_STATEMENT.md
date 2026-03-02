@@ -117,24 +117,7 @@ with open("commands.txt", "w") as f:
 ```
 
 ---
-
-## 5. Running the Simulation
-
-```bash
-cd Hackathon/Level2
-
-# Demo mode (uses built-in proportional controller — your baseline reference)
-python simulator.py
-
-# Your controller mode (reads from commands.txt)
-python simulator.py --c
-```
-
-> **In demo mode**, the simulator uses a simple proportional controller that already has direct access to platform position. Your job is to replicate this performance using **only camera pixels** — no direct coordinates.
-
----
-
-## 6. Scoring
+## 5. Scoring
 
 | Outcome | Score |
 |---------|-------|
@@ -146,7 +129,7 @@ The simulation prints your final distance from the platform center at touchdown.
 
 ---
 
-## 7. Key Challenges
+## 6. Key Challenges
 
 > **Perspective Distortion.** At high altitude, the entire platform appears small. At low altitude, only part of the platform may be visible. Your pixel-to-meter conversion must account for current altitude.
 
@@ -156,13 +139,6 @@ The simulation prints your final distance from the platform center at touchdown.
 
 ---
 
-## 8. Tips
 
-- Start by detecting the centroid of the white blob in the camera image using basic image processing (threshold → find center of mass)
-- Track centroid across frames to estimate platform velocity
-- Convert pixel offset to real-world meters: `error_m = (pixel_offset / 100) * ground_coverage_m`
-- A proportional controller is sufficient for a passing grade; a predictive controller earns bonus points
-
----
 
 
