@@ -139,19 +139,11 @@ You are free to use any approach: hand-tuned heuristics, potential fields, A* pa
 
 ---
 
-## 9. Tips & Hints
 
-> **Exploration is the bottleneck.** The target spawns ~1500 px away. A naive random walk may never find it within 3000 steps.
-
-> **The LiDAR is your map.** Rays pointing toward open space (high reading) indicate navigable directions. Use them to do wall-following or potential field navigation.
-
-> **Predictive pursuit beats reactive pursuit.** The target moves up to 3.5 px/step. If you know its position, aim slightly ahead of it based on its movement direction.
-
-> **Cover Awareness.** After losing sight of the target, it likely tried to hide behind the nearest obstacle relative to you. Check nearby obstacle positions.
 
 ---
 
-## 10. Scoring Summary
+## 9. Scoring Summary
 
 | Outcome | Score |
 |---------|-------|
