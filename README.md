@@ -23,7 +23,7 @@ Hey Y25s! Hope you are enjoying your time on the campus. These are the problem s
 ```bash
 pip install pygame
 pip install opencv-contrib-python numpy                # Level 3
-pip install opencv-contrib-python numpy requests simple-pid   # Bonus
+pip install opencv-contrib-python numpy requests simple-pid pyautogui   # Bonus
 ```
 
 ---

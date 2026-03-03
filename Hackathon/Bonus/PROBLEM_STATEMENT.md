@@ -137,7 +137,7 @@ Write a Python script `auto_land.py` that implements a continuous feedback loop 
 
 | Rule | Detail |
 |------|--------|
-| **Allowed Libraries** | `requests`, `socket`, `opencv-python` (cv2), `numpy`, `simple_pid` |
+| **Allowed Libraries** | `requests`, `socket`, `opencv-python` (cv2), `numpy`, `simple_pid`, `pyautogui` |
 | **No Hardcoding** | You **cannot** hardcode the target's physical coordinates. The drone **MUST** use the camera feed and ArUco detection to find the landing zone. |
 | **Out of Bounds** | Flying the drone outside the simulated arena walls results in immediate failure. |
 | **ArUco Dictionary** | Must use `DICT_4X4_50` |
@@ -201,7 +201,7 @@ python auto_land.py
 
 ### Requirements
 ```bash
-pip install opencv-contrib-python numpy requests simple-pid
+pip install opencv-contrib-python numpy requests simple-pid pyautogui
 ```
 
 ---
