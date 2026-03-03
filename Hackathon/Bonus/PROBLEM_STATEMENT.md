@@ -5,10 +5,9 @@
 ---
 
 ## 1. Context
+Your autonomous drone must execute a **precision landing sequence** inside a high-fidelity 3D physics simulator.
 
-Locating the target was only the first phase. Now, your autonomous drone must execute a **precision landing sequence** inside a high-fidelity 3D physics simulator.
-
-Beneath your drone are landing pads marked with **ArUco markers**. Your objective is to design a closed-loop flight controller that uses **Computer Vision** to detect the marker in real-time, calculates the positional error, and sends flight commands to land the drone perfectly on the target — **without ever hardcoding coordinates**.
+Beneath your drone are landing pads marked with ArUco markers. Your objective is to design a closed-loop flight controller that uses Computer Vision to detect the marker in real-time (capturing the simulator screen using a library such as PyAutoGUI for screenshot acquisition), calculates the positional error, and sends flight commands to land the drone precisely on the target — without ever hardcoding coordinates.
 
 You will not write code inside the simulator. Instead, your Python script (`auto_land.py`) acts as an **external flight computer**, communicating with the simulator over the network.
 
@@ -46,7 +45,7 @@ Your Python script communicates with the simulator via **network sockets** and *
 > |------|----------|
 > | `drone (1).exe` | Windows |
 > | `drone.x86_64` | Linux |
-> | `drone.zip` | Compressed archive |
+> | `drone.zip` | MacOS |
 
 ### A. Telemetry Stream (Simulator → Your Script)
 
@@ -206,5 +205,3 @@ pip install opencv-contrib-python numpy requests simple-pid
 ```
 
 ---
-
-
