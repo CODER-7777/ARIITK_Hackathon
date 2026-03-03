@@ -1,135 +1,108 @@
 # Level 2 — Operation Touchdown: Precision Landing
 
-> **Team Aerial Robotics IITK| Y25 Recruitment Hackathon**
-
+> **Team Aerial Robotics IITK | Y25 Recruitment Hackathon**
+>
 ---
 
 ## 1. Context
 
-Welcome to **Operation Touchdown** — the next escalation in the SKYE-X series. Level 1 tested your ability to *find and pursue* a target. Level 2 tests something far more precise: **landing your drone on a moving platform using only a downward-facing camera**.
-
-The drone is already descending. You cannot stop it. You must steer it laterally so that it touches down on the platform center — while the platform itself is moving beneath you.
+A drone is descending. You cannot stop it. The landing platform is oscillating sinusoidally below you — it never stops moving. Your only sensor is a downward-facing camera. You must steer the drone laterally so it touches down on the platform centre. No GPS. No position sensor. Everything inferred from pixels.
 
 ---
 
-## 2. The Environment
+## 2. Environment
 
-### Arena & Physics
-
-| Parameter | Value |
-|-----------|-------|
-| World Size | `800 × 800` pixels (1 px = 1 cm, scale: 100 px/m) |
-| Simulation Duration | `20 seconds` (fixed descent time) |
-| Frame Rate | `30 FPS` |
-| Landing Success Radius | `0.35 m` from platform center |
-
-### The Drone
+### Simulation
 
 | Parameter | Value |
 |-----------|-------|
-| Starting Position | `(475, 300)` — offset from platform |
-| Starting Altitude | `10.0 m` |
-| Descent Rate | Fixed: `0.5 m/s` (auto-descending, you cannot control altitude) |
-| Max Lateral Speed | `~1.2 m/s` (controller-limited) |
+| Sim Duration | `35 seconds` — fixed descent, cannot be paused |
+| Frame Rate | `30 FPS` (dt = 0.033 s) |
+| Success Radius | Final error ≤ `0.05 m` from platform centre |
+| Drone Start | `(80 px, 180 px)` — top-left, far from platform |
+| Altitude | `10.0 m → 0.0 m`, auto-descending (uncontrollable) |
+| Max Speed | `5.0 m/s` lateral (simulator enforced) |
 
-### The Landing Platform
+### Landing Platform
 
 | Parameter | Value |
 |-----------|-------|
-| Size | `1m × 1m` square |
-| Initial Position | `(400, 400)` — center of arena |
-| Movement | Horizontal oscillation ±1m at `0.5 m/s` |
-
-> The platform moves left and right in a sinusoidal pattern. You must **predict** its position at the moment of touchdown, not just react to it.
+| Size | `1 m × 1 m` |
+| X Motion | `centre_x + 2.0 × sin(0.9 t) m` — SHM, ±2 m amplitude |
+| Y Motion | `centre_y + 0.6 × sin(0.45 t) m` — slow sinusoidal drift |
 
 ---
 
-## 3. Sensor Suite — What Your Drone Sees
+## 3. Camera
 
-Unlike Level 1 (LiDAR + fog of war), Level 2 gives you a **simulated downward-facing camera**. There is no direct position readout — you must infer everything from pixels.
+Each frame `step_env()` returns a flat list of **10 000 grayscale integers** (100 × 100 px, row-major).
 
-### Camera Feed
+**Field of view:** `fov_m = 0.30 × altitude` metres. Use this to convert pixel offsets to real-world metres.
 
-Every frame, the simulator writes a **100×100 grayscale pixel grid** to `camera_pixels.txt`:
-
-```
-// camera_pixels.txt format:
-// 100 rows × 100 columns of integer grayscale values (0–255)
-// Separated by spaces, one row per line
-
-45 45 45 45 ... (100 values)
-45 45 255 255... 
-...
-```
-
-### Understanding the Camera
-
-- The camera looks **straight down** from the drone
-- **Field of View scales with altitude**: at high altitude, you see a large ground area; at low altitude, you see a small area in detail
-  - Ground coverage: `2.5 × altitude` meters (e.g., at 5m altitude → 12.5m × 12.5m visible)
-- The platform appears as a **bright white square** (grayscale ≈ 250) on a **dark green background** (≈ 45)
-- The platform has a **black inner marker** in its center (H-landing-pad style) to help with precise centering
-
-### What You Must Compute
-
-From the pixel data, you must determine:
-1. **Is the platform visible?** (is there a large white region in the frame?)
-2. **Where is the platform center relative to the drone** (in pixels → convert to meters)
-3. **How fast is it moving?** (track across frames)
+| Region | Gray Value | Notes |
+|--------|-----------|-------|
+| Grass / background | ~45–90 | Dark green |
+| Platform surface | ~200–230 | Bright rectangle — the landing pad |
+| Inner ArUco square | ~0–20 | Near-black square at platform centre |
 
 ---
 
 ## 4. Your Task
 
-Your controller reads `camera_pixels.txt` and writes velocity commands to `commands.txt`:
+Edit **`solver.py`** only. Implement the six TODOs:
 
-```
-// commands.txt format:
-vx vy
-// Example: "-0.5 0.3"
-// Units: m/s
-```
+| TODO | Where | What |
+|------|-------|------|
+| 1 | `SEARCH_SPEED` | Drone speed (m/s) during search. |
+| 2 | `KP/KI/KD` constants | PID gains for X and Y axes. |
+| 3 | `detect_platform()` | Find platform in pixel array. Return `(found, cx_norm, cy_norm)`. |
+| 4 | `PID.update()` | Implement P + I + D with anti-windup. Return clamped velocity. |
+| 5 | `search_velocity()` | Design a search pattern to sweep the arena. |
+| 6 | `main()` — PID block | Convert `cx_norm / cy_norm` → metres via `sim.fov_m`. Feed into PID. |
 
-The simulator reads `commands.txt` every frame and applies lateral velocity to the drone accordingly.
+### Phase 1 — Search
 
-### In Python (if using Python controller)
+The drone starts top-left; the platform is not visible. Implement `search_velocity()` to sweep the arena until the platform enters the camera FOV.
+
+### Phase 2 — Track & Land
+
+Once detected, use PID to keep the drone centred over the moving platform throughout descent.
 
 ```python
-# Read camera
-with open("camera_pixels.txt", "r") as f:
-    rows = [[int(v) for v in line.split()] for line in f]
-
-# Compute vx, vy (your logic here)
-vx, vy = your_controller(rows)
-
-# Write commands
-with open("commands.txt", "w") as f:
-    f.write(f"{vx:.4f} {vy:.4f}")
+err_x_m = cx_norm * (sim.fov_m / 2)
+err_y_m = cy_norm * (sim.fov_m / 2)
+vx = pid_x.update(err_x_m, dt)
+vy = pid_y.update(err_y_m, dt)
 ```
 
 ---
+
 ## 5. Scoring
 
-| Outcome | Score |
-|---------|-------|
-| Landed within `0.35 m` of center | **SUCCESS** |
-| Landed outside `0.35 m` | **FAILED** |
-| Final error `< 0.1 m` | **Precision Bonus** |
-
-The simulation prints your final distance from the platform center at touchdown.
-
----
-
-## 6. Key Challenges
-
-> **Perspective Distortion.** At high altitude, the entire platform appears small. At low altitude, only part of the platform may be visible. Your pixel-to-meter conversion must account for current altitude.
-
-> **Platform Prediction.** The platform moves at `0.5 m/s`. Over 20 seconds of descent, it oscillates multiple times. Steer toward where it *will be*, not where it is now.
-
-> **No Direct Position Data.** Unlike Level 1, there is no `player_x / player_y`. You must estimate position purely from the camera image.
+| Outcome | Points |
+|---------|--------|
+| Final error ≤ `0.20 m` | 10 |
+| Final error ≤ `0.10 m` | 20 |
+| Final error ≤ `0.05 m` **(SUCCESS)** | 50 |
+| Bonus: error ≤ `0.02 m` | +20 |
 
 ---
 
+## 6. Rules
 
+### Allowed
+- Edit `solver.py` freely — add functions, tune constants, import libraries.
+- Use any pip-installable package (NumPy, OpenCV, SciPy, etc.).
 
+### Not Allowed
+- Modify `simulator_level2.py`.
+- Access `sim.plat_x`, `sim.plat_y`, or any internal simulator variable.
+- Hardcode the platform position or trajectory.
 
+### Deliverables
+
+Submit **`solver.py`** only. Must run with the original unmodified `simulator_level2.py` in the same directory:
+
+```bash
+python solver.py
+```
