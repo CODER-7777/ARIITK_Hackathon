@@ -1,3 +1,5 @@
+![Level 1 Demo](Level1.gif)
+
 # Level 1 — Operation SKYE-X: Search and Pursuit
 
 > **Team Aerial Robotics IITK| Y25 Recruitment Hackathon**
