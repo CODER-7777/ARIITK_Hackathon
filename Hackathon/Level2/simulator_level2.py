@@ -5,14 +5,10 @@ Changes vs original:
   1. Top-left info box is smaller (compact single-line bar, no big block)
   2. Helipad oscillates with a small downward drift component
      (SHM in X + slow sinusoidal drift in Y)
-  3. Keyboard interaction is FULLY ACTIVE in ALL modes (demo, keyboard, external)
-     In --c (solver) mode: holding a key overrides the solver commands instantly.
-
-Run modes:
-  python simulator.py             → Demo  (keyboard active)
-  python simulator.py --keyboard  → Keyboard only
-  python simulator.py --c         → External solver  (keyboard still overrides)
+  3. KEYBOARD INTERACTION IS ACTIVE HERE IN DEMO MODE OF ENV FOR  YOU TO MOVE AROUND LAND AND SEE 
+     In  (solver) mode: no keyboard interaction.
 """
+
 import pygame
 import math
 import os
@@ -34,7 +30,7 @@ DRONE_COLOR   = (255, 60,  60 )
 TRAIL_COLOR   = (255, 200, 100)
 SUCCESS_COLOR = (80,  255, 120)
 FAIL_COLOR    = (255, 80,  80 )
-ARUCO_COLOR   = (255, 215, 0  )
+pf_COLOR   = (255, 215, 0  )
 ACCENT        = (100, 180, 255)
 PANEL_BG      = (18,  22,  30 )
 
@@ -77,7 +73,7 @@ class DroneSim:
         self._last_cam_surface    = None
 
         # Detection tracking
-        self.aruco_visible  = False
+        self.pf_visible  = False
         self.detection_step = None
 
         # Error history for live graph
@@ -122,7 +118,7 @@ class DroneSim:
         r = pygame.Rect(rel_x - self.plat_size/2, rel_y - self.plat_size/2,
                         self.plat_size, self.plat_size)
         pygame.draw.rect(surf, PLATFORM_COLOR, r)
-        pygame.draw.rect(surf, ARUCO_COLOR, r, 4)
+        pygame.draw.rect(surf, pf_COLOR, r, 4)
 
         inner = pygame.Rect(rel_x - self.plat_size/4, rel_y - self.plat_size/4,
                             self.plat_size/2, self.plat_size/2)
@@ -136,8 +132,8 @@ class DroneSim:
             for x in range(self.cam_resolution)
             if scaled.get_at((x, y))[0] > 150
         )
-        self.aruco_visible = bright > 4
-        if self.aruco_visible and self.detection_step is None:
+        self.pf_visible = bright > 4
+        if self.pf_visible and self.detection_step is None:
             self.detection_step = self.step
 
         try:
@@ -180,7 +176,7 @@ class DroneSim:
                     if event.key == pygame.K_ESCAPE:
                         running = False
 
-            # ── Keyboard state — ALWAYS polled in every mode ──────────────
+            # ── Keyboard state ──────────────
             keys = pygame.key.get_pressed()
             self._kb_vx = (
                 -KB_SPD if (keys[pygame.K_LEFT]  or keys[pygame.K_a]) else
@@ -198,7 +194,7 @@ class DroneSim:
             # ── Velocity arbitration ──────────────────────────────────────
             # EXTERNAL mode: keyboard takes priority when any key is held,
             #                otherwise fall back to solver's commands.txt
-            # KEYBOARD/DEMO: keyboard always drives
+
             kb_pressed = (self._kb_vx != 0.0 or self._kb_vy != 0.0)
 
             if self.mode == self.MODE_EXTERNAL and not kb_pressed:
@@ -258,13 +254,13 @@ class DroneSim:
                             (px - hs, py + hs - 6, hs*2, 12))
         r = pygame.Rect(px - hs, py - hs, hs*2, hs*2)
         pygame.draw.rect(self.screen, PLATFORM_COLOR, r, border_radius=4)
-        pygame.draw.rect(self.screen, ARUCO_COLOR, r, 4, border_radius=4)
+        pygame.draw.rect(self.screen, pf_COLOR, r, 4, border_radius=4)
         pygame.draw.rect(self.screen, WHITE, r, 1, border_radius=4)
 
         inner = pygame.Rect(px - hs//2, py - hs//2, hs, hs)
         pygame.draw.rect(self.screen, (10, 10, 10), inner)
-        pygame.draw.line(self.screen, ARUCO_COLOR, (px - hs//2, py), (px + hs//2, py), 1)
-        pygame.draw.line(self.screen, ARUCO_COLOR, (px, py - hs//2), (px, py + hs//2), 1)
+        pygame.draw.line(self.screen, pf_COLOR, (px - hs//2, py), (px + hs//2, py), 1)
+        pygame.draw.line(self.screen, pf_COLOR, (px, py - hs//2), (px, py + hs//2), 1)
 
         sr = int(LANDING_SUCCESS_M * PIXELS_PER_METER)
         zone = pygame.Surface((sr*2+2, sr*2+2), pygame.SRCALPHA)
@@ -300,8 +296,8 @@ class DroneSim:
         fov_m = self.cam_ground_size_base * max(0.1, self.drone_altitude)
         vr    = int(fov_m * PIXELS_PER_METER / 2)
         fov_s = pygame.Surface((vr*2+4, vr*2+4), pygame.SRCALPHA)
-        pygame.draw.circle(fov_s, (*ARUCO_COLOR, 25), (vr+2, vr+2), vr)
-        pygame.draw.circle(fov_s, (*ARUCO_COLOR, 130), (vr+2, vr+2), vr, 1)
+        pygame.draw.circle(fov_s, (*pf_COLOR, 25), (vr+2, vr+2), vr)
+        pygame.draw.circle(fov_s, (*pf_COLOR, 130), (vr+2, vr+2), vr, 1)
         self.screen.blit(fov_s, (ix - vr - 2, iy - vr - 2))
 
     def _draw_trail(self):
@@ -347,7 +343,7 @@ class DroneSim:
                              self.drone_y - self.plat_y) / PIXELS_PER_METER
         if self.mode in (self.MODE_KEYBOARD, self.MODE_DEMO):
             phase_str, phase_col = "MANUAL FLIGHT", ACCENT
-        elif not self.aruco_visible:
+        elif not self.pf_visible:
             phase_str, phase_col = "PHASE 1: SEARCH", (255, 200, 60)
         else:
             phase_str, phase_col = "PHASE 2: TRACK",  SUCCESS_COLOR
@@ -359,15 +355,15 @@ class DroneSim:
         # Numeric rows
         err_col = SUCCESS_COLOR if err_now <= LANDING_SUCCESS_M else \
                   (255, 200, 60) if err_now < 0.20 else FAIL_COLOR
-        aruco_str = "VISIBLE  ✓" if self.aruco_visible else "not in frame"
-        aruco_col = SUCCESS_COLOR if self.aruco_visible else (180, 100, 100)
+        pf_str = "VISIBLE  ✓" if self.pf_visible else "not in frame"
+        pf_col = SUCCESS_COLOR if self.pf_visible else (180, 100, 100)
 
         rows = [
             ("Altitude",   f"{self.drone_altitude:.2f} m",  WHITE),
             ("H-Error",    f"{err_now:.3f} m",              err_col),
             ("Step",       f"{self.step}",                  GRAY),
             ("Time left",  f"{max(0.0, SIM_TIME_SEC - self.time_elapsed):.1f} s", GRAY),
-            ("ArUco",      aruco_str,                       aruco_col),
+            ("pf",      pf_str,                       pf_col),
         ]
         if self.detection_step is not None:
             t_det = self.detection_step / FPS
@@ -408,14 +404,14 @@ class DroneSim:
         y += gh + 8
         pygame.draw.line(self.screen, (50,55,65), (px+8, y), (px+pw-8, y), 1); y += 8
 
-        # ── Keyboard widget — ALWAYS shown in every mode ──────────────────
+        # ── Keyboard widget — shown in every mode ──────────────────
         keys  = pygame.key.get_pressed()
         up    = bool(keys[pygame.K_UP]    or keys[pygame.K_w])
         down  = bool(keys[pygame.K_DOWN]  or keys[pygame.K_s])
         left  = bool(keys[pygame.K_LEFT]  or keys[pygame.K_a])
         right = bool(keys[pygame.K_RIGHT] or keys[pygame.K_d])
 
-        kl = self.font_sm.render("KEYBOARD  (always active)", True, ACCENT)
+        kl = self.font_sm.render("KEYBOARD", True, ACCENT)
         self.screen.blit(kl, kl.get_rect(centerx=cx, top=y)); y += 18
 
         ks  = 28
@@ -522,9 +518,9 @@ class DroneSim:
         t1    = self.font_big.render(msg, True, color)
         self.screen.blit(t1, t1.get_rect(center=(self.W//2, self.H//2 - 70)))
 
-        det_str = (f"ArUco detected at step {self.detection_step}  "
+        det_str = (f"pf detected at step {self.detection_step}  "
                    f"({self.detection_step/FPS:.1f} s)") \
-                  if self.detection_step else "ArUco was never detected"
+                  if self.detection_step else "pf was never detected"
 
         for i, line in enumerate([
             f"Final error :  {final_err:.4f} m    (target <= {LANDING_SUCCESS_M} m)",
