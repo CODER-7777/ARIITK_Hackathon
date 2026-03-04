@@ -174,12 +174,17 @@ Teams must submit a single GitHub repository containing:
 ```bash
 .\"drone (1).exe"
 ```
+or double click on the exe
 
 ### Linux
 ```bash
 chmod +x drone.x86_64
 ./drone.x86_64
 ```
+Or give executable permission in properties and double click
+
+### Mac OS
+Run from the zip
 
 **Step 3:** In a separate terminal, run your controller:
 ```bash
