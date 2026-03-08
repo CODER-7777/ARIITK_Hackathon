@@ -1,4 +1,4 @@
-![Bonus Level Demo](BonusLevel.gif)
+![Bonus Level Demo](Bonus.gif)
 # Bonus Level — Operation FREEFALL: Autonomous Precision Landing
 
 > **Team Aerial Robotics IITK| Y25 Recruitment Hackathon**
@@ -89,7 +89,7 @@ curl localhost:8080 --json '{ "pitch": -1.0 }'
 |---------|--------|
 | `"pitch"` | Forward / backward tilt |
 | `"roll"` | Left / right tilt |
-| `"yaw"` | Left / right rotation |
+| `"yaw_rate"` | Left / right rotation |
 | `"throttle"` | Vertical thrust |
 
 You can send any combination of these in a single JSON payload:
@@ -107,16 +107,16 @@ Write a Python script `auto_land.py` that implements a continuous feedback loop 
 ┌─────────────────────────────────────────────────────────┐
 │                    CONTROL LOOP                         │
 │                                                         │
-│  1. READ     ← Telemetry from port 8081                │
-│              ← Camera frame from /video                 │
+│  1. READ     ← Telemetry from port 8081                 │
+│              ← Camera frame by capturing window         │
 │                                                         │
-│  2. PROCESS  → Detect ArUco marker (OpenCV)            │
+│  2. PROCESS  → Detect ArUco marker (OpenCV)             │
 │              → Calculate pixel error from frame center  │
 │                                                         │
 │  3. COMPUTE  → PID Controller converts visual error     │
-│                into smooth flight commands               │
+│                into smooth flight commands              │
 │                                                         │
-│  4. ACT      → Send pitch, roll, throttle, yaw to 8080 │
+│  4. ACT      → Send pitch, roll, throttle, yaw to 8080  │
 │                                                         │
 │  └── Repeat ──────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
@@ -174,12 +174,17 @@ Teams must submit a single GitHub repository containing:
 ```bash
 .\"drone (1).exe"
 ```
+or double click on the exe
 
 ### Linux
 ```bash
 chmod +x drone.x86_64
 ./drone.x86_64
 ```
+Or give executable permission in properties and double click
+
+### Mac OS
+Run from the zip
 
 **Step 3:** In a separate terminal, run your controller:
 ```bash
